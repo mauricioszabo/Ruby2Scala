@@ -101,6 +101,19 @@ class RubyTest extends test.active_record.Test {
       nil.as[Int] should be === None
     }
 
+    "casts correctly to generic Lists and Vectors" in {
+      val list = Ruby("[1, 2, 3]")
+      list.as[List, Int] should be === Some(List(1, 2, 3))
+      list.as[Vector, Int] should be === Some(Vector(1, 2, 3))
+      list.as[List, String] should be === None
+    }
+
+    "casts correctly to generic Maps" in {
+      val map = Ruby("{ten: 10, eleven: 11}")
+      map.asMap[Symbol, Int] should be === Some(Map('ten -> 10, 'eleven -> 11))
+      map.asMap[Symbol, String] should be === None
+    }
+
     "cast blocks to functions" is pending
   }
 

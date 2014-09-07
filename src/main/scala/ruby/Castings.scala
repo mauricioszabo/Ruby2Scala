@@ -1,5 +1,6 @@
 package ruby
 
+import scala.language.higherKinds
 import scala.language.implicitConversions
 import java.math.{BigInteger, BigDecimal => BD}
 import java.lang.{Long=>JLong, Double=>JDouble}
@@ -28,7 +29,31 @@ trait Castings[A <: AbstractRubyWrapper] extends AbstractRubyWrapper {
     case _ => obj
   }
 
-  def as[A](implicit m: Manifest[A]): Option[A] = any match {
+  def as[A](implicit m: Manifest[A]): Option[A] = castTo[A](any)
+
+  def as[G[A], A](implicit m: Manifest[A], m2: Manifest[G[A]]): Option[G[A]] = any match {
+    case e: Vector[_] =>
+      val elements: Vector[A] = e.map { e2 => castTo[A](e2) match {
+        case Some(e) => e
+        case None => return None
+      }}
+      Some(Vector(elements: _*).asInstanceOf[G[A]])
+    case _ => None
+  }
+
+  def asMap[K, V](implicit mk: Manifest[K], mv: Manifest[V]): Option[Map[K, V]] = any match {
+    case map: Map[_, _] =>
+      val newMap = map.map { case(k, v) =>
+        (castTo[K](k), castTo[V](v)) match {
+          case(Some(key), Some(value)) => (key -> value)
+          case _ => return None
+        }
+      }
+      Some(newMap)
+    case _ => None
+  }
+
+  private def castTo[A](element: Any)(implicit m: Manifest[A]) = element match {
     case e: JLong if(m.toString == "Int") => Some(e.toInt.asInstanceOf[A])
     case e: JLong if(m.toString == "Long") => Some(e.asInstanceOf[A])
     case e: JDouble if(m.toString == "Float") => Some(e.toFloat.asInstanceOf[A])
