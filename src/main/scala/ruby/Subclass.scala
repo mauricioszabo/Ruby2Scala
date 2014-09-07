@@ -25,9 +25,5 @@ class Subclass(className: String, params: Any*) extends Ruby[RubyImpl] {
     wrapped
   }
 
-  private lazy val myMethods = getClass.getMethods.foldLeft(Map[String, List[Method]]()) { (map, method) =>
-    map.updated(method.getName, method :: map.get(method.getName).getOrElse(Nil))
-  }
-
   def __toRubyWrapper(obj: IRubyObject) = new RubyImpl(obj.asInstanceOf[RubyObject])
 }
